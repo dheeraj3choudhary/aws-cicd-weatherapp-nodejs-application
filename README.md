@@ -1,7 +1,7 @@
 <div align="center">
 
 # Weather Application Pipeline
-Node.js weather application deployed to AWS EC2 via CI/CD pipeline. This repository contains the application code, Dockerfile, and deployment configuration.
+Node.js weather application deployed to AWS EC2 via CI/CD pipeline. This repository contains the application code, Dockerfile, and deployment configuration. The companion infrastructure repository is [weather-app-infra](https://github.com/dheeraj3choudhary/aws-cicd-weatherapp-nodejs-infra/tree/main)
 
 
 
