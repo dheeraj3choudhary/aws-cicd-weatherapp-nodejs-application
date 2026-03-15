@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather App</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      background: #0f1117;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 24px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 0.25rem;
+      color: #fff;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 2rem;
+    }
+
+    input {
+      flex: 1;
+      background: #0f1117;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: #6366f1; }
+    input::placeholder { color: #4b5563; }
+
+    button {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.95rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #4f46e5; }
+    button:disabled { background: #374151; cursor: not-allowed; }
+
+    .weather {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .weather.show { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .city-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      margin-bottom: 0.25rem;
+    }
+
+    .condition {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      text-transform: capitalize;
+      margin-bottom: 1.5rem;
+    }
+
+    .temp {
+      font-size: 4rem;
+      font-weight: 300;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+      color: #a5b4fc;
+    }
+
+    .temp span {
+      font-size: 1.5rem;
+      color: #6b7280;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat {
+      background: #0f1117;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .error {
+      display: none;
+      background: #1f1315;
+      border: 1px solid #3f1f24;
+      border-radius: 12px;
+      padding: 1rem;
+      color: #f87171;
+      font-size: 0.9rem;
+    }
+
+    .error.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Weather</h1>
+    <p class="subtitle">Real-time weather for any city</p>
+
+    <div class="search-row">
+      <input type="text" id="cityInput" placeholder="Enter city name..." />
+      <button id="searchBtn" onclick="getWeather()">Search</button>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="weather" id="weather">
+      <div class="city-name" id="cityName"></div>
+      <div class="condition" id="condition"></div>
+      <div class="temp" id="temp"></div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Feels Like</div>
+          <div class="stat-value" id="feelsLike"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Humidity</div>
+          <div class="stat-value" id="humidity"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('cityInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') getWeather();
+    });
+
+    async function getWeather() {
+      const city = document.getElementById('cityInput').value.trim();
+      if (!city) return;
+
+      const btn = document.getElementById('searchBtn');
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+
+      document.getElementById('error').classList.remove('show');
+      document.getElementById('weather').classList.remove('show');
+
+      try {
+        const res = await fetch(`/weather?city=${encodeURIComponent(city)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          document.getElementById('error').textContent = data.error || 'Something went wrong';
+          document.getElementById('error').classList.add('show');
+          return;
+        }
+
+        document.getElementById('cityName').textContent = `${data.city}, ${data.country}`;
+        document.getElementById('condition').textContent = data.condition;
+        document.getElementById('temp').innerHTML = `${Math.round(data.temperature)}<span>°C</span>`;
+        document.getElementById('feelsLike').textContent = `${Math.round(data.feels_like)}°C`;
+        document.getElementById('humidity').textContent = `${data.humidity}%`;
+        document.getElementById('weather').classList.add('show');
+
+      } catch (err) {
+        document.getElementById('error').textContent = 'Failed to fetch weather data';
+        document.getElementById('error').classList.add('show');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Search';
+      }
+    }
+  </script>
+</body>
+</html>
